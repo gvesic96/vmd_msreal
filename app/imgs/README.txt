@@ -1,0 +1,1 @@
+U ovom folderu smestene su jpeg slike.

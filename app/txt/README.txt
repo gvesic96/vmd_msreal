@@ -1,0 +1,1 @@
+U ovom folderu su smestene slike u okviru txt fajlova.
