@@ -23,8 +23,8 @@
 #define REFERENCE_FRAME pix19
 #define MV_RES s19s20
 
-#define START_I 0               //WRITE
-#define READY_O 4               //READ
+#define START_I 0
+#define READY_O 4
 
 #define ROW_SIZE 256
 #define COL_SIZE 256
@@ -33,18 +33,6 @@
 #define MAX_PKT_SIZE (16384*4)
 #define MAX_MV_SIZE 4096
 
-/*
-mmap-   koristi se kako bi se odredjeni opseg adresa iz korisnickog prostora (user space-a) povezao sa memorijom uredjaja. 
-        Kao povratna vrednost prosledjuje se pokazivac na prostor koji je memorijski mapiran. 
-        Svaki put kada se iz aplikacije upisuje ili cita odgovarajuci sadrzaj iz svog adresnog prostora ona direktno
-        menja (upisuje/cita) adresni prostor drajvera, odnostno uredjaja.
-
-memcpy- koristi se za kopiranje blokova podataka u adresni prostor dobijen pomocu funkcije mmap. 
-        Kao parametre prima pokazivac na memorijski mapiran prostor, pokazivac na podatke koje je potrebno 
-        kopirati i velicinu paketa koji je potrebno kopirati.
-
-munmap- koristi se za uklanjanje zahtevanog memorijski mapiranog prostora.
-*/
 
 char get_ready(char*);
 char get_start(char*);
@@ -58,11 +46,11 @@ int main(void)
     unsigned int x,y;
     int ret = 0;
         
-    uint32_t *p_curr_img;//mmap pointer for curr_img
-    uint32_t *p_ref_img; //mmap pointer for ref_img 
+    uint32_t *p_curr_img;
+    uint32_t *p_ref_img;
          
-    uint32_t f_bram_curr;//MMAP BRAM CURR
-    uint32_t f_bram_ref;//MMAP BRAM REF;
+    uint32_t f_bram_curr;
+    uint32_t f_bram_ref;
     
     
     //MMAP BRAM_CURR and BRAM_REF
@@ -70,15 +58,15 @@ int main(void)
     f_bram_curr = open("/dev/br_ctrl_0", O_RDWR|O_NDELAY); /*open node file (BRAM_CURR)*/
     f_bram_ref  = open("/dev/br_ctrl_1", O_RDWR|O_NDELAY); /*open node file (BRAM_REF)*/
     //----------------------------------------------------------------------------------
-    if(f_bram_curr < 0) {printf("Cannot open '/dev/f_bram_curr \n"); return -1;} /*check for errors*/
-    if(f_bram_ref  < 0) {printf("Cannot open '/dev/f_bram_ref \n");  return -1;} /*check for errors*/
+    if(f_bram_curr < 0) {printf("Cannot open '/dev/f_bram_curr \n"); return -1;}
+    if(f_bram_ref  < 0) {printf("Cannot open '/dev/f_bram_ref \n");  return -1;}
     //---------------------------------------------------------------------------------- 
 
     printf("MMAP-ing data to BRAM_CURR and BRAM_REF...\n");
     
     //----------------------------------------------------------------------------------
     p_curr_img = (uint32_t*) mmap(0, MAX_PKT_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, f_bram_curr, 0); 
-    memcpy(p_curr_img, CURRENT_FRAME, MAX_PKT_SIZE); //copy data stored in CURRENT_FRAME array
+    memcpy(p_curr_img, CURRENT_FRAME, MAX_PKT_SIZE);
     munmap(p_curr_img, MAX_PKT_SIZE);
     close(f_bram_curr);
     if(f_bram_curr < 0) {printf("Cannot close /dev/f_bram_curr"); return -1;}
@@ -116,7 +104,7 @@ int main(void)
     //----------------------------------------------------------------------------------
     char buffer[50];
     fscanf(f_vmd,"%s",buffer);
-    /*Wait for ARPS_IP response*/
+
     //printf("Waiting for ARPS_IP response...\n");
     while(get_ready(buffer)==0){
         fscanf(f_vmd,"%s",buffer);
@@ -155,13 +143,13 @@ int main(void)
     int fail = 0;
     for(m = 0; m < 512; m++){
         #ifdef CHECK_VECTORS
-            if(p_mv[m] != MV_RES[m]){ //MV_RES => s90s91
+            if(p_mv[m] != MV_RES[m]){
                 fail = 1;
                 printf("ERROR MV: position %d\n",m);
             }
         #endif
         fprintf(f_mv, "%d\n", p_mv[m]);
-        //printf("mv[%d]=%d\n",m,p_mv[m]);
+
 	}
     
     #ifdef CHECK_VECTORS
@@ -234,10 +222,7 @@ int main(void)
     int i1,j1,r1,c1;
     uint8_t imgRec[65536];
 
-    /*i1 i j1 su koordinate blokova velicine MB_SIZE*MB_SIZE, gde i1 ide pod redovima
-      a j1 ide po kolonama. dx i dy su koordinate blokova odredjenih na osnovu dobijenih vektora pomeraja.
-      Nakon toga se pronadjeni blokovi smestaju u niz imgRec.      
-    */
+
     for (i1=0; i1<(ROW_SIZE-MB_SIZE+1); i1+=MB_SIZE){
         for (j1=0; j1<(COL_SIZE-MB_SIZE+1); j1+=MB_SIZE){
             dx = j1 + p_mv[mbCount];//col
